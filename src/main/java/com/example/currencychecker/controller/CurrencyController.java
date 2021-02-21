@@ -1,12 +1,10 @@
 package com.example.currencychecker.controller;
 
 
-import com.example.currencychecker.httpclient.GiphyFeignClient;
 import com.example.currencychecker.service.AsyncFeign;
 import com.example.currencychecker.service.GiphyFeign;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
@@ -21,6 +20,8 @@ import java.util.concurrent.ExecutionException;
 
 @RestController
 public class CurrencyController {
+
+    Logger logger = LoggerFactory.getLogger(CurrencyController.class);
 
     private GiphyFeign giphyFeignClient;
 
@@ -35,13 +36,12 @@ public class CurrencyController {
     @GetMapping(path = "/")
     public String getTestStr() {
 
-        DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                .withZone(ZoneId.systemDefault());
-
         Instant today = Instant.now();
-        Instant yesterday = today.minus(1, ChronoUnit.DAYS);
-        System.out.println(today);
-        System.out.println(yesterday);
+        ZoneId euroMsk = ZoneId.of("Europe/Moscow");
+        DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(euroMsk);
+        ZonedDateTime todayMsk = ZonedDateTime.ofInstant(today, euroMsk);
+        ZonedDateTime yesterday = todayMsk.minus(1, ChronoUnit.DAYS);
+        logger.info("request at " + todayMsk);
 
         CompletableFuture<BigDecimal> todayRates;
         CompletableFuture<BigDecimal> yesterdayRates;
@@ -55,10 +55,13 @@ public class CurrencyController {
              cf.get();
 
             BigDecimal decYesRate = yesterdayRates.get();
+            logger.info("yesterday rates - " + decYesRate);
             BigDecimal decTodRate = todayRates.get();
+            logger.info("today rates - " + decTodRate);
 
             int ratesUp = decTodRate.compareTo(decYesRate);
             String gifType = ratesUp >= 0 ? "rich" : "broke";
+            logger.info("getting " + gifType + " gif");
             gifUrl = giphyFeignClient.getGif(gifType);
 
         } catch (InterruptedException | ExecutionException e) {
