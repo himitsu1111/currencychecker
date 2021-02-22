@@ -18,6 +18,12 @@ public class HttpRequestTest {
 
     @Test
     public void imgShouldBeReturned() {
-        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/", String.class)).contains("<img src=\"https");
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/RUB", String.class)).contains("<img src=\"https");
     }
+
+    @Test
+    public void mainShouldBeReturned() {
+        assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/", String.class)).contains("Please set one of a");
+    }
+
 }

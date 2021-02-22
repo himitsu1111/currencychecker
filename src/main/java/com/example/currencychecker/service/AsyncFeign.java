@@ -1,5 +1,6 @@
 package com.example.currencychecker.service;
 
+import com.example.currencychecker.exceptions.InvalidHTTPParamException;
 import com.example.currencychecker.httpclient.OpenexchangeFeignClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,9 +18,6 @@ public class AsyncFeign {
 
     private OpenexchangeFeignClient openexchangeFeignClient;
 
-    @Value("${currency}")
-    String currency;
-
     @Value("${openexchangekey}")
     String key;
 
@@ -29,16 +27,19 @@ public class AsyncFeign {
     }
 
     @Async
-    public CompletableFuture<BigDecimal> getRatesAsync (String date) {
+    public CompletableFuture<BigDecimal> getRatesAsync (String date, String currency) throws InvalidHTTPParamException {
 
-        String retStr = "";
+        String retStr;
         BigDecimal retDec = null;
         try {
             JsonNode response
                     = new ObjectMapper().readTree(openexchangeFeignClient.getRates(key, date));
-            retStr = response.get("rates")
-                    .get(currency)
-                    .asText();
+            JsonNode bufNode = response.get("rates")
+                                       .get(currency);
+            if (bufNode == null)
+                throw new InvalidHTTPParamException("Invalid currency param in http request");
+
+            retStr = bufNode.asText();
             retDec = new BigDecimal(retStr);
 
         } catch (JsonProcessingException e) {

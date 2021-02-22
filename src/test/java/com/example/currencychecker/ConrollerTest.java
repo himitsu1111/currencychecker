@@ -2,6 +2,7 @@ package com.example.currencychecker;
 
 
 import com.example.currencychecker.controller.CurrencyController;
+import com.example.currencychecker.exceptions.InvalidHTTPParamException;
 import com.example.currencychecker.service.AsyncFeign;
 import com.example.currencychecker.service.GiphyFeign;
 import org.junit.jupiter.api.Test;
@@ -32,8 +33,9 @@ public class ConrollerTest {
     CurrencyController currencyController;
 
     @Test
-    public void isGifReceivedWhenCurrencySame() {
+    public void isGifReceivedWhenCurrencySame() throws InvalidHTTPParamException {
 
+        final String currency = "RUB";
         final String gifType = "rich";
         final String currencyRateToday = "74.035";
         final String currencyRateYesterday = "74.035";
@@ -48,12 +50,12 @@ public class ConrollerTest {
         Mockito.when(giphyFeignClient.getGif(gifType))
                                     .thenReturn(gifUrl);
 
-        Mockito.when(openexchFeignClient.getRatesAsync(DATE_TIME_FORMATTER.format(today)))
+        Mockito.when(openexchFeignClient.getRatesAsync(DATE_TIME_FORMATTER.format(today), currency))
                 .thenReturn(CompletableFuture.completedFuture(new BigDecimal(currencyRateToday)));
 
-        Mockito.when(openexchFeignClient.getRatesAsync(DATE_TIME_FORMATTER.format(yesterday)))
+        Mockito.when(openexchFeignClient.getRatesAsync(DATE_TIME_FORMATTER.format(yesterday), currency))
                 .thenReturn(CompletableFuture.completedFuture(new BigDecimal(currencyRateYesterday)));
 
-        assertThat(currencyController.getTestStr()).contains(gifUrl);
+        assertThat(currencyController.getGif(currency)).contains(gifUrl);
     }
 }
